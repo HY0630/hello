@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekly Signup Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Growth analytics</p>
+        <h1>Weekly Signup Dashboard</h1>
+        <p class="subtitle">Track acquisition quality, paid conversion, churn risk, and activation by week.</p>
+      </div>
+      <p class="date-range">Last 6 weeks</p>
+    </header>
+
+    <section class="filters" aria-label="Dashboard filters">
+      <label for="regionFilter">
+        Region
+        <select id="regionFilter">
+          <option value="all">All regions</option>
+          <option value="North America">North America</option>
+          <option value="Europe">Europe</option>
+          <option value="APAC">APAC</option>
+        </select>
+      </label>
+
+      <label for="channelFilter">
+        Channel
+        <select id="channelFilter">
+          <option value="all">All channels</option>
+          <option value="Organic">Organic</option>
+          <option value="Paid Search">Paid Search</option>
+          <option value="Referral">Referral</option>
+        </select>
+      </label>
+    </section>
+
+    <section id="kpis" class="kpis" aria-live="polite"></section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Weekly signups</h2>
+        <p>Filtered signup volume by week</p>
+      </div>
+      <div id="chart" class="chart" aria-label="Weekly signup bar chart"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Weekly data</h2>
+        <p>Signup, conversion, risk, and activation metrics</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Week</th>
+              <th>Region</th>
+              <th>Channel</th>
+              <th>Signups</th>
+              <th>Paid conversions</th>
+              <th>Churn risk</th>
+              <th>Activation rate</th>
+            </tr>
+          </thead>
+          <tbody id="weeklyTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
