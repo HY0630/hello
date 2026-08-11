@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team Launch Checklist</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --border: #e2e5ea;
+    --text: #1c2024;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --done: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 20px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .progress-bar {
+    margin-top: 16px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width .2s ease;
+  }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  button {
+    font: inherit;
+    font-size: 14px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button:hover { border-color: #c7ccd4; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { padding: 24px 20px 64px; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-head h2 { margin: 0; font-size: 17px; flex: 1; }
+  .count { color: var(--muted); font-size: 13px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  li:last-child { border-bottom: none; }
+  li input[type=checkbox] { margin-top: 4px; width: 17px; height: 17px; cursor: pointer; accent-color: var(--done); }
+  li .label { flex: 1; cursor: pointer; }
+  li.done .label { text-decoration: line-through; color: var(--muted); }
+  .owner {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 13px;
+    width: 130px;
+    color: var(--muted);
+  }
+  .remove {
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 4px;
+  }
+  .remove:hover { color: #dc2626; }
+  .add-row { display: flex; gap: 8px; padding: 12px 16px; }
+  .add-row input[type=text] {
+    flex: 1;
+    font: inherit;
+    font-size: 14px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding-bottom: 32px; }
+  @media print {
+    .toolbar, .add-row, .remove { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Team Launch Checklist</h1>
+    <div class="sub" id="summary">0 of 0 complete</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="toolbar">
+      <button id="exportBtn">Export JSON</button>
+      <button id="importBtn">Import JSON</button>
+      <button id="printBtn">Print</button>
+      <button id="resetBtn">Reset checkboxes</button>
+      <button id="restoreBtn" class="primary">Restore defaults</button>
+      <input type="file" id="fileInput" accept="application/json" hidden />
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="sections"></main>
+<footer>Progress is saved automatically in this browser (localStorage).</footer>
+
+<script>
+const STORAGE_KEY = 'team-launch-checklist-v1';
+
+const DEFAULTS = [
+  {
+    id: 'planning',
+    title: 'Planning',
+    items: [
+      'Define launch goal and success metrics',
+      'Confirm launch date and content freeze deadline',
+      'Identify target audience and segments',
+      'Assign owners for each workstream',
+      'Draft launch timeline and milestones',
+      'List dependencies and known risks'
+    ]
+  },
+  {
+    id: 'content',
+    title: 'Content',
+    items: [
+      'Write announcement blog post',
+      'Prepare product screenshots and demo video',
+      'Draft social media posts',
+      'Write customer email and in-app message',
+      'Update docs, help center, and FAQ',
+      'Prepare sales and support enablement notes'
+    ]
+  },
+  {
+    id: 'approvals',
+    title: 'Approvals',
+    items: [
+      'Product sign-off on scope and messaging',
+      'Legal and compliance review',
+      'Brand and design review',
+      'Security and privacy review',
+      'Pricing and packaging approval',
+      'Executive go/no-go decision'
+    ]
+  },
+  {
+    id: 'launch-day',
+    title: 'Launch Day',
+    items: [
+      'Deploy release and verify feature flags',
+      'Smoke test critical user flows',
+      'Publish blog, social, and email',
+      'Notify support and staff the escalation channel',
+      'Monitor dashboards, errors, and feedback',
+      'Post-launch recap and follow-up actions'
+    ]
+  }
+];
+
+function uid() {
+  return 'item-' + Math.random().toString(36).slice(2, 9);
+}
+
+function buildDefaultState() {
+  return {
+    sections: DEFAULTS.map(s => ({
+      id: s.id,
+      title: s.title,
+      items: s.items.map(text => ({ id: uid(), text, owner: '', done: false }))
+    }))
+  };
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return buildDefaultState();
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.sections)) return buildDefaultState();
+    return parsed;
+  } catch (e) {
+    return buildDefaultState();
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    /* storage unavailable (e.g. private mode); app still works in-memory */
+  }
+}
+
+let state = load();
+
+const sectionsEl = document.getElementById('sections');
+
+function render() {
+  sectionsEl.innerHTML = '';
+  let total = 0, done = 0;
+
+  state.sections.forEach(section => {
+    const sectionDone = section.items.filter(i => i.done).length;
+    total += section.items.length;
+    done += sectionDone;
+
+    const el = document.createElement('section');
+
+    const head = document.createElement('div');
+    head.className = 'section-head';
+    const h2 = document.createElement('h2');
+    h2.textContent = section.title;
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = sectionDone + '/' + section.items.length;
+    head.append(h2, count);
+
+    const ul = document.createElement('ul');
+    section.items.forEach(item => ul.appendChild(renderItem(section, item)));
+
+    const addRow = document.createElement('div');
+    addRow.className = 'add-row';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Add a task to ' + section.title + '\u2026';
+    const addBtn = document.createElement('button');
+    addBtn.textContent = 'Add';
+    const add = () => {
+      const text = input.value.trim();
+      if (!text) return;
+      section.items.push({ id: uid(), text, owner: '', done: false });
+      input.value = '';
+      save();
+      render();
+    };
+    addBtn.addEventListener('click', add);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
+    addRow.append(input, addBtn);
+
+    el.append(head, ul, addRow);
+    sectionsEl.appendChild(el);
+  });
+
+  document.getElementById('summary').textContent = done + ' of ' + total + ' complete';
+  document.getElementById('progressFill').style.width = (total ? (done / total) * 100 : 0) + '%';
+}
+
+function renderItem(section, item) {
+  const li = document.createElement('li');
+  if (item.done) li.className = 'done';
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = !!item.done;
+  cb.addEventListener('change', () => { item.done = cb.checked; save(); render(); });
+
+  const label = document.createElement('span');
+  label.className = 'label';
+  label.textContent = item.text;
+  label.addEventListener('click', () => { item.done = !item.done; save(); render(); });
+
+  const owner = document.createElement('input');
+  owner.type = 'text';
+  owner.className = 'owner';
+  owner.placeholder = 'Owner';
+  owner.value = item.owner || '';
+  owner.addEventListener('input', () => { item.owner = owner.value; save(); });
+
+  const remove = document.createElement('button');
+  remove.className = 'remove';
+  remove.title = 'Remove task';
+  remove.textContent = '\u00d7';
+  remove.addEventListener('click', () => {
+    section.items = section.items.filter(i => i.id !== item.id);
+    save();
+    render();
+  });
+
+  li.append(cb, label, owner, remove);
+  return li;
+}
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'launch-checklist.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+const fileInput = document.getElementById('fileInput');
+document.getElementById('importBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      if (!parsed || !Array.isArray(parsed.sections)) throw new Error('bad format');
+      state = parsed;
+      save();
+      render();
+    } catch (e) {
+      alert('That file is not a valid checklist export.');
+    }
+    fileInput.value = '';
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Uncheck every task? Your tasks and owners are kept.')) return;
+  state.sections.forEach(s => s.items.forEach(i => { i.done = false; }));
+  save();
+  render();
+});
+
+document.getElementById('restoreBtn').addEventListener('click', () => {
+  if (!confirm('Restore the default checklist? Custom tasks and owners will be lost.')) return;
+  state = buildDefaultState();
+  save();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
